@@ -1,0 +1,358 @@
+---
+title: "R/qtl2ggplot Vignette"
+author: "Brian S. Yandell"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{demo qtl2ggplot features}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.width = 7, fig.height = 5)
+```
+
+## Setup
+
+Load example DO data from web
+
+```{r}
+library(qtl2)
+library(qtl2ggplot)
+library(ggplot2)
+```
+
+```{r}
+DOex <- 
+  read_cross2(
+    file.path(
+      "https://raw.githubusercontent.com/rqtl",
+       "qtl2data/master/DOex",
+       "DOex.zip"))
+```
+
+Create artificial second phenotype as arcsic sqrt of first one.
+
+```{r}
+DOex$pheno <- cbind(DOex$pheno, asin = asin(sqrt(DOex$pheno[,1]/100)))
+DOex$pheno[,"asin"] <- DOex$pheno[,"asin"] *
+  sd(DOex$pheno[,"OF_immobile_pct"], na.rm = TRUE) /
+  sd(DOex$pheno[,"asin"], na.rm = TRUE)
+```
+
+## Genome scan
+
+```{r}
+pr <- calc_genoprob(DOex, error_prob=0.002)
+apr <- genoprob_to_alleleprob(pr)
+```
+
+```{r}
+scan_apr <- scan1(apr, DOex$pheno)
+```
+
+```{r}
+find_peaks(scan_apr, DOex$pmap)
+```
+The basic plot of genome scan
+
+```{r}
+plot(scan_apr, DOex$pmap)
+```
+
+and the grammary of graphics (`ggplot2`) version
+
+```{r}
+autoplot(scan_apr, DOex$pmap)
+```
+
+## Focus on one chromosome
+
+Subset to chr 2.
+
+```{r}
+DOex <- DOex[,"2"]
+```
+
+Calculate genotype probabilities and convert to allele probabilities
+
+```{r}
+pr <- calc_genoprob(DOex, error_prob=0.002)
+apr <- genoprob_to_alleleprob(pr)
+```
+
+## Genome Scan
+
+```{r}
+scan_apr <- scan1(apr, DOex$pheno)
+```
+
+```{r}
+find_peaks(scan_apr, DOex$pmap)
+```
+
+```{r}
+plot(scan_apr, DOex$pmap)
+```
+
+```{r}
+autoplot(scan_apr, DOex$pmap)
+```
+
+```{r}
+coefs <- scan1coef(apr, DOex$pheno)
+```
+
+```{r}
+plot(coefs, DOex$pmap, 1:8, col = CCcolors)
+```
+
+```{r}
+autoplot(coefs, DOex$pmap)
+```
+
+Plot allele effects over LOD scan.
+
+```{r}
+plot(coefs, DOex$pmap, 1:8, col = CCcolors, scan1_output = scan_apr)
+```
+
+```{r}
+autoplot(coefs, DOex$pmap, scan1_output = scan_apr,
+         legend.position = "none")
+```
+
+Examine just some of the founder effects, without centering.
+
+```{r}
+plot(coefs, DOex$pmap, c(5,8), col = CCcolors[c(5,8)])
+```
+
+```{r}
+autoplot(coefs, DOex$pmap, c(5,8))
+```
+
+```{r}
+autoplot(coefs, DOex$pmap, c(5,8), facet = "geno")
+```
+
+```{r}
+plot(coefs, DOex$pmap, 4:5, col = CCcolors[4:5], scan1_output = scan_apr)
+```
+
+```{r}
+autoplot(coefs, DOex$pmap, 4:5, scan1_output = scan_apr, legend.position = "none")
+```
+
+## SNP Association Mapping
+
+Download snp info from web
+
+```{r}
+filename <- file.path("https://raw.githubusercontent.com/rqtl",
+                      "qtl2data/master/DOex", 
+                      "c2_snpinfo.rds")
+tmpfile <- tempfile()
+download.file(filename, tmpfile, quiet=TRUE)
+snpinfo <- readRDS(tmpfile)
+unlink(tmpfile)
+```
+
+Convert to snp probabilities
+
+```{r}
+snpinfo <- index_snps(DOex$pmap, snpinfo)
+snppr <- genoprob_to_snpprob(apr, snpinfo)
+```
+
+Perform SNP association analysis (here, ignoring residual kinship)
+
+```{r}
+scan_snppr <- scan1(snppr, DOex$pheno)
+```
+
+Plot results
+
+```{r}
+plot(scan_snppr, snpinfo, drop_hilit = 1.5)
+```
+
+```{r}
+autoplot(scan_snppr, snpinfo, facet = "pheno", drop_hilit = 1.5)
+```
+
+Plot just subset of distinct SNPs
+
+```{r}
+plot(scan_snppr, snpinfo, show_all_snps=FALSE, drop_hilit = 1.5)
+```
+
+```{r}
+autoplot(scan_snppr, snpinfo, show_all_snps=FALSE, drop_hilit = 1.5)
+```
+
+Highlight the top snps (with LOD within 1.5 of max). Show as open circles of size 1.
+
+```{r}
+plot(scan_snppr, snpinfo, drop_hilit=1.5, cex=1, pch=1)
+```
+
+```{r}
+autoplot(scan_snppr, snpinfo, drop_hilit=1.5, cex=1, pch=1)
+```
+
+Highlight SDP patterns in SNPs within 3 of max; connect with lines.
+
+```{r}
+autoplot(scan_snppr, snpinfo, patterns="all",drop_hilit=3,cex=2)
+```
+
+Highlight only top SDP patterns in SNPs.
+
+```{r}
+autoplot(scan_snppr, snpinfo, patterns="hilit",drop_hilit=3,cex=2,
+     ylim = c(3.6,6.6))
+```
+
+```{r}
+autoplot(coefs, scan1_output = scan_apr, DOex$pmap)
+```
+
+## Multiple phenotypes
+
+Plot routines (except scan patterns for now) can accommodate multiple phenotypes. At present, it is best to stick to under 10. In the preambl of this document, a second phenotype, `asin`, was artifically created for illustration purposes.
+
+### Genome Scans
+
+```{r}
+plot(scan_apr, DOex$pmap, 1)
+plot(scan_apr, DOex$pmap, 2, add = TRUE, col = "red")
+```
+
+```{r}
+autoplot(scan_apr, DOex$pmap, 1:2)
+```
+
+```{r}
+autoplot(scan_apr, DOex$pmap, 1:2, facet="pheno")
+```
+
+### SNP Scans
+
+Plot results.
+
+```{r}
+plot(scan_snppr, snpinfo, lodcolumn=1, cex=1, pch=1, drop_hilit = 1.5)
+plot(scan_snppr, snpinfo, lodcolumn=2, cex=1, pch=1, drop_hilit = 1.5)
+```
+
+```{r}
+autoplot(scan_snppr, snpinfo, 1:2, facet="pheno", cex=1, pch=1, 
+         drop_hilit = 1.5)
+```
+
+```{r}
+plot(scan_snppr, snpinfo, lodcolumn=1, cex=1, pch=1, 
+     show_all_snps = FALSE, drop_hilit = 1.5)
+plot(scan_snppr, snpinfo, lodcolumn=2, cex=1, pch=1, 
+     show_all_snps = FALSE, drop_hilit = 1.5)
+```
+
+```{r}
+autoplot(scan_snppr, snpinfo, 1:2, show_all_snps = FALSE, facet="pheno", cex=2, pch=1, drop_hilit = 1.5)
+```
+
+Note that in the `autoplot` (using `qtl2ggplot`), the `hilit` points for the second trait are fewer than with the `plot` (using `qtl2`). This is because the `maxlod` for the faceted `autoplot` is across both traits, and the other points for the second trait are too low.
+
+```{r}
+autoplot(scan_snppr, snpinfo, 2, show_all_snps = FALSE, facet="pheno", cex=1, pch=1, 
+         drop_hilit = 1.5)
+```
+
+```{r}
+autoplot(scan_snppr, snpinfo, 1:2,show_all_snps = FALSE,
+             drop_hilit = 2, col=1:2, col_hilit=3:4,
+             cex=2, pch=1)
+```
+
+Play with the colors.
+
+```{r}
+autoplot(scan_snppr, snpinfo, 1:2,show_all_snps = FALSE, facet_var = "pheno",
+             drop_hilit = 2, col=1:2, col_hilit=2:1,
+             cex=2, pch=1)
+```
+
+```{r}
+autoplot(scan_snppr, snpinfo, 2, patterns = "all",
+             cex=2, pch=1, drop_hilit=2)
+```
+
+```{r}
+autoplot(scan_snppr, snpinfo, 1:2, patterns = "all", cex=2, pch=1,
+             facet = "pheno", drop_hilit=3)
+```
+
+```{r}
+autoplot(scan_snppr, snpinfo, 1:2, patterns = "hilit", cex=2, pch=1,
+             drop_hilit=3, ylim=c(3.6,6.6), facet = "pheno")
+```
+
+```{r}
+autoplot(scan_snppr, snpinfo, 1:2, patterns = "hilit", show_all_snps = TRUE, cex=2, pch=1,
+             drop_hilit=3, ylim=c(3,7), facet = "pattern")
+```
+
+## LOD Peaks
+
+```{r}
+(peaks <- find_peaks(scan_apr, DOex$pmap, drop = 1.5))
+```
+
+```{r}
+plot_peaks(peaks, DOex$pmap)
+```
+
+```{r}
+ggplot_peaks(peaks, DOex$pmap)
+```
+
+## Coefficients for 36 allele pairs
+
+QTL effects for 36 allele pair model. Note that they are quite unstable, and the 36 allele pair max LOD is far from the peak for the additive (haplotype) model. Only showing effects with at least one `E` allele. Plots are truncated at +/-100 for viewability. Note also that `qtl2ggplot` routines have some centering built in.
+
+36 allele pair genome scan.
+
+```{r}
+scan_pr <- scan1(pr, DOex$pheno)
+```
+
+```{r}
+coefs36 <- scan1coef(pr, DOex$pheno)
+```
+
+All 36 allele pair QTL effects.
+
+```{r}
+plot(coefs36, DOex$pmap, 1:36, col = 1:36, ylim=c(-100,100))
+```
+
+```{r}
+autoplot(coefs36, DOex$pmap, ylim=c(-100,100), colors = NULL, legend.position = "none")
+```
+
+The `autoplot` is centered by default (so mean across all alleles is mean of trait) to make coefficient plots easier to view. This can be turned off with the hidden `center` option.
+
+```{r}
+autoplot(coefs36, DOex$pmap, ylim=c(-100,100), center = FALSE, 
+         colors = NULL, legend.position = "none")
+```
+
+Only 8 allele pair QTL effects that contain `E`.
+
+```{r}
+tmp <- qtl2ggplot:::modify_object(coefs36, 
+                    coefs36[, stringr::str_detect(dimnames(coefs36)[[2]], "E")])
+autoplot(tmp, DOex$pmap, ylim=c(-100,100))
+```
