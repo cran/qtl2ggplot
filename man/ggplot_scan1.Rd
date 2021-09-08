@@ -17,16 +17,7 @@ ggplot_scan1(
   ...
 )
 
-\method{autoplot}{scan1}(
-  x,
-  map,
-  lodcolumn = 1,
-  chr = NULL,
-  gap = 25,
-  bgcolor = "gray90",
-  altbgcolor = "gray85",
-  ...
-)
+\method{autoplot}{scan1}(x, ...)
 
 ggplot_scan1_internal(
   map,
@@ -37,6 +28,7 @@ ggplot_scan1_internal(
   pattern = NULL,
   facet = NULL,
   patterns = c("none", "all", "hilit"),
+  chrName = "Chr",
   ...
 )
 }
@@ -70,6 +62,8 @@ strings.}
 \item{facet}{Plot facets if multiple phenotypes and group provided (default = \code{NULL}).}
 
 \item{patterns}{Connect SDP patterns: one of \code{c("none","all","hilit")}.}
+
+\item{chrName}{Add prefix chromosome name (default \code{"Chr"}).}
 }
 \value{
 None.
