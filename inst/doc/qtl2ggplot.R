@@ -22,8 +22,8 @@ apr <- readRDS(tmpfile)
 unlink(tmpfile)
 
 ## ----eval = FALSE-------------------------------------------------------------
-#  pr <- qtl2::calc_genoprob(DOex, error_prob=0.002)
-#  apr <- qtl2::genoprob_to_alleleprob(pr)
+# pr <- qtl2::calc_genoprob(DOex, error_prob=0.002)
+# apr <- qtl2::genoprob_to_alleleprob(pr)
 
 ## -----------------------------------------------------------------------------
 scan_apr <- qtl2::scan1(apr, DOex$pheno)
@@ -100,7 +100,7 @@ unlink(tmpfile)
 pr <- subset(pr, chr = "2")
 
 ## ----eval = FALSE-------------------------------------------------------------
-#  pr <- qtl2::calc_genoprob(DOex, error_prob=0.002)
+# pr <- qtl2::calc_genoprob(DOex, error_prob=0.002)
 
 ## -----------------------------------------------------------------------------
 filename <- file.path("https://raw.githubusercontent.com/rqtl",
@@ -112,9 +112,9 @@ snpinfo <- readRDS(tmpfile)
 unlink(tmpfile)
 
 ## ----eval = FALSE-------------------------------------------------------------
-#  snpdb_file <- system.file("extdata", "cc_variants_small.sqlite", package="qtl2")
-#  query_variant <- qtl2::create_variant_query_func(snpdb_file)
-#  snpinfo <- query_variant("2", 96.5, 98.5)
+# snpdb_file <- system.file("extdata", "cc_variants_small.sqlite", package="qtl2")
+# query_variant <- qtl2::create_variant_query_func(snpdb_file)
+# snpinfo <- query_variant("2", 96.5, 98.5)
 
 ## -----------------------------------------------------------------------------
 variants <- c("snp","indel","SV","INS","DEL","INV")
@@ -168,9 +168,9 @@ gene_tbl <- readRDS(tmpfile)
 unlink(tmpfile)
 
 ## ----eval=FALSE---------------------------------------------------------------
-#  dbfile <- system.file("extdata", "mouse_genes_small.sqlite", package="qtl2")
-#  query_genes <- qtl2::create_gene_query_func(dbfile, filter="(source=='MGI')")
-#  gene_tbl <- query_genes("2", 96.5, 98.5)
+# dbfile <- system.file("extdata", "mouse_genes_small.sqlite", package="qtl2")
+# query_genes <- qtl2::create_gene_query_func(dbfile, filter="(source=='MGI')")
+# gene_tbl <- query_genes("2", 96.5, 98.5)
 
 ## -----------------------------------------------------------------------------
 qtl2::plot_genes(gene_tbl, xlim = c(96,99))
